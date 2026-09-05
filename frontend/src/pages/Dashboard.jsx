@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useDevice } from '../context/DeviceContext'
 import StatusBadge from '../components/StatusBadge'
 import ReadoutPanel from '../components/ReadoutPanel'
 import TimeRangeTabs from '../components/TimeRangeTabs'
@@ -6,7 +7,6 @@ import TimeSeriesChart from '../components/TimeSeriesChart'
 import StatsSummary from '../components/StatsSummary'
 import { fetchLatest, fetchReadings, fetchStats, fetchStatus, fetchMetrics, exportCsvUrl } from '../api/client'
 
-const DEVICE_ID = 'esp32-feeder-01'
 const LIVE_POLL_MS = 4000
 const CORE_KEYS = new Set(['voltage', 'current', 'power', 'battery_pct'])
 
@@ -17,6 +17,7 @@ function readingValueFor(reading, key) {
 }
 
 export default function Dashboard() {
+  const { selectedDeviceId, machines } = useDevice()
   const [metrics, setMetrics] = useState([])
   const [latest, setLatest] = useState(null)
   const [status, setStatus] = useState({ online: false, last_seen: null })
@@ -26,35 +27,38 @@ export default function Dashboard() {
   const [stats, setStats] = useState([])
   const [error, setError] = useState(null)
 
+  const currentMachine = machines.find((m) => m.device_id === selectedDeviceId)
+
   const loadMetrics = useCallback(async () => {
     try {
-      const m = await fetchMetrics()
-      setMetrics(m)
+      setMetrics(await fetchMetrics())
     } catch (e) {
-      // non-fatal: dashboard still works with core-only fallback if this fails
+      // non-fatal
     }
   }, [])
 
   const loadLive = useCallback(async () => {
+    if (!selectedDeviceId) return
     try {
-      const [latestData, statusData] = await Promise.all([fetchLatest(DEVICE_ID), fetchStatus(DEVICE_ID)])
+      const [latestData, statusData] = await Promise.all([fetchLatest(selectedDeviceId), fetchStatus(selectedDeviceId)])
       setLatest(latestData)
       setStatus(statusData)
       setError(null)
     } catch (e) {
       setError('Could not reach the backend API. Is uvicorn running?')
     }
-  }, [])
+  }, [selectedDeviceId])
 
   const loadChart = useCallback(async () => {
+    if (!selectedDeviceId) return
     try {
-      const [seriesData, statsData] = await Promise.all([fetchReadings(range, DEVICE_ID), fetchStats(range, DEVICE_ID)])
+      const [seriesData, statsData] = await Promise.all([fetchReadings(range, selectedDeviceId), fetchStats(range, selectedDeviceId)])
       setSeries(seriesData)
       setStats(statsData)
     } catch (e) {
       setError('Could not reach the backend API. Is uvicorn running?')
     }
-  }, [range])
+  }, [range, selectedDeviceId])
 
   useEffect(() => { loadMetrics() }, [loadMetrics])
 
@@ -85,8 +89,11 @@ export default function Dashboard() {
     <div className="app-shell">
       <div className="status-strip">
         <div>
-          <h1>Chicken Feeder Monitor</h1>
-          <p className="subtitle">Electrical parameters — automated pellet dispenser</p>
+          <h1>{currentMachine?.machine_name || 'Chicken Feeder Monitor'}</h1>
+          <p className="subtitle">
+            {currentMachine?.machine_model ? `${currentMachine.machine_model} — ` : ''}
+            Electrical parameters — automated pellet dispenser
+          </p>
         </div>
         <StatusBadge online={status.online} lastSeen={status.last_seen} />
       </div>
@@ -118,7 +125,7 @@ export default function Dashboard() {
                 <option key={m.key} value={m.key}>{m.label}</option>
               ))}
             </select>
-            <button className="export-btn" onClick={() => window.open(exportCsvUrl(range, DEVICE_ID), '_blank')}>
+            <button className="export-btn" onClick={() => window.open(exportCsvUrl(range, selectedDeviceId), '_blank')}>
               Export CSV
             </button>
           </div>

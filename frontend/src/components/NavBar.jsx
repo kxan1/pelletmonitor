@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import MachineSelector from './MachineSelector'
 
 export default function NavBar() {
   const { user, isAdmin, logout } = useAuth()
@@ -23,6 +24,8 @@ export default function NavBar() {
           FEEDER MONITOR
         </NavLink>
 
+        <MachineSelector />
+
         {/* Mobile: toggle + hamburger, always visible without opening the menu */}
         <div className="navbar-always-visible mobile-only-group">
           <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme" aria-label="Toggle dark/light theme">
@@ -37,6 +40,9 @@ export default function NavBar() {
           <NavLink to="/" className={linkClass} onClick={() => setOpen(false)}>Dashboard</NavLink>
           {isAdmin && (
             <NavLink to="/admin/readings" className={linkClass} onClick={() => setOpen(false)}>Data (CRUD)</NavLink>
+          )}
+          {isAdmin && (
+            <NavLink to="/admin/machines" className={linkClass} onClick={() => setOpen(false)}>Machines</NavLink>
           )}
           {isAdmin && (
             <NavLink to="/admin/keys" className={linkClass} onClick={() => setOpen(false)}>Manage Keys</NavLink>

@@ -576,3 +576,28 @@ button {
   border-color: var(--red);
   color: var(--red);
 }
+
+/* ---------- Machine selector (nav) ---------- */
+.machine-selector {
+  margin-left: 12px;
+  max-width: 160px;
+}
+
+.machine-selector-single {
+  margin-left: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .machine-selector {
+    max-width: 90px;
+    margin-left: 6px;
+    font-size: 0.7rem;
+  }
+  .machine-selector-single {
+    display: none;
+  }
+}

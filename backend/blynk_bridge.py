@@ -55,7 +55,7 @@ def fetch_blynk_values(metrics: list[dict]) -> dict:
 
 
 def push_to_backend(core: dict, custom: dict):
-    payload = {**core, "custom_metrics": custom or None, "device_id": "esp32-feeder-01"}
+    payload = {**core, "custom_metrics": custom or None, "device_id": settings.device_id}
     headers = {"X-Ingest-Key": settings.ingest_api_key}
     resp = requests.post(settings.ingest_url, json=payload, headers=headers, timeout=10)
     resp.raise_for_status()
@@ -63,7 +63,7 @@ def push_to_backend(core: dict, custom: dict):
 
 
 def main():
-    log.info("Starting Blynk bridge, polling every %ss", settings.poll_interval_seconds)
+    log.info("Starting Blynk bridge for device_id=%s, polling every %ss", settings.device_id, settings.poll_interval_seconds)
     metrics = fetch_metric_definitions()
     log.info("Tracking metrics: %s", [m["key"] for m in metrics])
     cycle = 0

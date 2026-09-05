@@ -1,32 +1,27 @@
 import { useEffect, useState, useCallback } from 'react'
-import {
-  fetchReadingsTable, updateReading, deleteReading,
-  fetchMachines, createMachine, updateMachine,
-} from '../api/client'
-
-const DEVICE_ID = 'esp32-feeder-01'
+import { Link } from 'react-router-dom'
+import { useDevice } from '../context/DeviceContext'
+import { fetchReadingsTable, updateReading, deleteReading } from '../api/client'
 
 export default function AdminCrud() {
+  const { selectedDeviceId, machines } = useDevice()
   const [rows, setRows] = useState([])
-  const [machine, setMachine] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [editDraft, setEditDraft] = useState({})
-  const [machineDraft, setMachineDraft] = useState({ machine_name: '', machine_model: '', owner: '' })
   const [error, setError] = useState(null)
-  const [savingMachine, setSavingMachine] = useState(false)
+
+  const currentMachine = machines.find((m) => m.device_id === selectedDeviceId)
 
   const load = useCallback(async () => {
+    if (!selectedDeviceId) return
     try {
-      const [table, machines] = await Promise.all([fetchReadingsTable(DEVICE_ID), fetchMachines()])
+      const table = await fetchReadingsTable(selectedDeviceId)
       setRows(table)
-      const m = machines.find((x) => x.device_id === DEVICE_ID) || null
-      setMachine(m)
-      if (m) setMachineDraft({ machine_name: m.machine_name || '', machine_model: m.machine_model || '', owner: m.owner || '' })
       setError(null)
     } catch (e) {
       setError(e.response?.data?.detail || 'Failed to load data. Are you logged in as admin?')
     }
-  }, [])
+  }, [selectedDeviceId])
 
   useEffect(() => { load() }, [load])
 
@@ -55,65 +50,15 @@ export default function AdminCrud() {
     }
   }
 
-  async function saveMachine(e) {
-    e.preventDefault()
-    setSavingMachine(true)
-    try {
-      const payload = { device_id: DEVICE_ID, ...machineDraft }
-      if (machine) {
-        await updateMachine(DEVICE_ID, payload)
-      } else {
-        await createMachine(payload)
-      }
-      load()
-    } catch (e) {
-      setError(e.response?.data?.detail || 'Failed to save machine info')
-    } finally {
-      setSavingMachine(false)
-    }
-  }
-
   return (
     <div className="app-shell">
       <h1 className="page-title">Logged Data — CRUD</h1>
       <p className="subtitle" style={{ marginBottom: 20 }}>
-        Edit or delete individual logged readings, and manage the machine identity attached to them.
+        Viewing: <strong>{currentMachine?.machine_name || selectedDeviceId}</strong>
+        {' '}— switch machines using the selector in the nav bar. Manage machine identity
+        (name/model/owner) on the <Link to="/admin/machines">Machines</Link> page.
       </p>
       {error && <p style={{ color: 'var(--red)', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>{error}</p>}
-
-      <div className="chart-panel" style={{ marginBottom: 24 }}>
-        <h3 style={{ marginTop: 0 }}>Machine Identity</h3>
-        <form onSubmit={saveMachine} className="machine-form">
-          <div>
-            <label className="form-label">Machine Name</label>
-            <input
-              className="form-input"
-              value={machineDraft.machine_name}
-              onChange={(e) => setMachineDraft({ ...machineDraft, machine_name: e.target.value })}
-              required
-            />
-          </div>
-          <div>
-            <label className="form-label">Machine Model</label>
-            <input
-              className="form-input"
-              value={machineDraft.machine_model}
-              onChange={(e) => setMachineDraft({ ...machineDraft, machine_model: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="form-label">Owner</label>
-            <input
-              className="form-input"
-              value={machineDraft.owner}
-              onChange={(e) => setMachineDraft({ ...machineDraft, owner: e.target.value })}
-            />
-          </div>
-          <button className="primary-btn" type="submit" disabled={savingMachine}>
-            {savingMachine ? 'Saving…' : 'Save Machine Info'}
-          </button>
-        </form>
-      </div>
 
       <div className="table-wrap">
         <table className="data-table">
@@ -124,9 +69,6 @@ export default function AdminCrud() {
               <th>Current (A)</th>
               <th>Power (W)</th>
               <th>Battery (%)</th>
-              <th>Machine</th>
-              <th>Model</th>
-              <th>Owner</th>
               <th></th>
             </tr>
           </thead>
@@ -149,9 +91,6 @@ export default function AdminCrud() {
                     <td>{r.battery_pct?.toFixed(2) ?? '—'}</td>
                   </>
                 )}
-                <td>{r.machine_name || '—'}</td>
-                <td>{r.machine_model || '—'}</td>
-                <td>{r.owner || '—'}</td>
                 <td className="table-actions">
                   {editingId === r.id ? (
                     <>
@@ -168,7 +107,7 @@ export default function AdminCrud() {
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr><td colSpan={9} style={{ color: 'var(--ink-dim)', textAlign: 'center', padding: 24 }}>No readings logged yet.</td></tr>
+              <tr><td colSpan={6} style={{ color: 'var(--ink-dim)', textAlign: 'center', padding: 24 }}>No readings logged yet for this machine.</td></tr>
             )}
           </tbody>
         </table>
