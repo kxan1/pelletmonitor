@@ -61,6 +61,11 @@ export async function fetchMe() {
   return data
 }
 
+export async function changeCredentials(payload) {
+  const { data } = await api.put('/auth/me', payload)
+  return data
+}
+
 // ---------- Admin: metric ("key") management ----------
 export async function createMetric(metric) {
   const { data } = await api.post('/metrics', metric)
