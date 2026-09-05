@@ -338,6 +338,29 @@ button {
   cursor: pointer;
 }
 
+.navbar-always-visible {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* Mobile-only group (theme toggle + hamburger) shows by default;
+   desktop-only toggle inside navbar-links is hidden by default. */
+.desktop-only-toggle {
+  display: none;
+}
+
+@media (min-width: 861px) {
+  .mobile-only-group {
+    display: none;
+  }
+  .desktop-only-toggle {
+    display: inline-flex;
+    margin-left: 8px;
+  }
+}
+
 .navbar-links {
   display: flex;
   align-items: center;

@@ -23,9 +23,15 @@ export default function NavBar() {
           FEEDER MONITOR
         </NavLink>
 
-        <button className="nav-hamburger" onClick={() => setOpen((o) => !o)} aria-label="Toggle menu">
-          {open ? '✕' : '☰'}
-        </button>
+        {/* Mobile: toggle + hamburger, always visible without opening the menu */}
+        <div className="navbar-always-visible mobile-only-group">
+          <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme" aria-label="Toggle dark/light theme">
+            {theme === 'dark' ? '☀' : '☾'}
+          </button>
+          <button className="nav-hamburger" onClick={() => setOpen((o) => !o)} aria-label="Toggle menu">
+            {open ? '✕' : '☰'}
+          </button>
+        </div>
 
         <div className={`navbar-links ${open ? 'open' : ''}`}>
           <NavLink to="/" className={linkClass} onClick={() => setOpen(false)}>Dashboard</NavLink>
@@ -40,15 +46,16 @@ export default function NavBar() {
           <NavLink to="/about" className={linkClass} onClick={() => setOpen(false)}>About</NavLink>
           <NavLink to="/settings" className={linkClass} onClick={() => setOpen(false)}>Settings</NavLink>
 
-          <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
-            {theme === 'dark' ? '☀' : '☾'}
-          </button>
-
           {user ? (
             <button className="export-btn" onClick={handleLogout}>Log out ({user.email})</button>
           ) : (
             <NavLink to="/login" className={linkClass} onClick={() => setOpen(false)}>Admin Login</NavLink>
           )}
+
+          {/* Desktop: sits naturally at the end of the always-visible link row */}
+          <button className="theme-toggle desktop-only-toggle" onClick={toggleTheme} title="Toggle theme" aria-label="Toggle dark/light theme">
+            {theme === 'dark' ? '☀' : '☾'}
+          </button>
         </div>
       </div>
     </nav>
