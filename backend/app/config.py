@@ -5,11 +5,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # backend/.env — one level up from this file (backend/app/config.py)
 ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
 
-if not ENV_PATH.exists():
-    raise FileNotFoundError(
-        f"Could not find .env at: {ENV_PATH}\n"
-        "Make sure a file literally named '.env' (not '.env.txt') exists in the backend/ folder."
-    )
+#if not ENV_PATH.exists():
+#    raise FileNotFoundError(
+#        f"Could not find .env at: {ENV_PATH}\n"
+#        "Make sure a file literally named '.env' (not '.env.txt') exists in the backend/ folder."
+#    )
+
+#for live deployments, we want to load the .env file if it exists, but not fail if it doesn't.
+if ENV_PATH.exists():
+    load_dotenv(dotenv_path=ENV_PATH, override=True)
 
 # Explicitly load it into the process environment BEFORE Settings() reads anything.
 # This sidesteps encoding/path quirks in pydantic-settings' own env_file loader.
