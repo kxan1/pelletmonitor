@@ -1,0 +1,19 @@
+# ============ Secrets — never commit these ============
+.env
+backend/.env
+frontend/.env
+
+# ============ Python (backend) ============
+backend/venv/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# ============ Node (frontend) ============
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ============ OS / editor clutter ============
+.DS_Store
+Thumbs.db
