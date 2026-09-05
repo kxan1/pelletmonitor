@@ -103,6 +103,29 @@ def me(current_user: models.User = Depends(get_current_user)):
     return current_user
 
 
+@app.put("/auth/me", response_model=schemas.UserOut)
+def change_credentials(
+    payload: schemas.ChangeCredentialsIn,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+
+    if payload.new_email and payload.new_email != current_user.email:
+        existing = db.query(models.User).filter_by(email=payload.new_email).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="That email is already in use")
+        current_user.email = payload.new_email
+
+    if payload.new_password:
+        current_user.hashed_password = hash_password(payload.new_password)
+
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
 # ---------- METRIC DEFINITIONS ("keys") ----------
 @app.get("/metrics", response_model=list[schemas.MetricDefinitionOut])
 def get_metrics(db: Session = Depends(get_db)):

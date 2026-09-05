@@ -53,7 +53,10 @@ export default function NavBar() {
           <NavLink to="/settings" className={linkClass} onClick={() => setOpen(false)}>Settings</NavLink>
 
           {user ? (
-            <button className="export-btn" onClick={handleLogout}>Log out ({user.email})</button>
+            <>
+              <NavLink to="/account" className={linkClass} onClick={() => setOpen(false)}>Account</NavLink>
+              <button className="export-btn" onClick={handleLogout}>Log out ({user.email})</button>
+            </>
           ) : (
             <NavLink to="/login" className={linkClass} onClick={() => setOpen(false)}>Admin Login</NavLink>
           )}

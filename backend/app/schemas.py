@@ -103,3 +103,9 @@ class UserOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ChangeCredentialsIn(BaseModel):
+    current_password: str
+    new_email: Optional[EmailStr] = None
+    new_password: Optional[str] = Field(None, min_length=8, description="Leave blank to keep current password")

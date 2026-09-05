@@ -10,6 +10,7 @@ import Login from './pages/Login'
 import AdminCrud from './pages/AdminCrud'
 import ManageKeys from './pages/ManageKeys'
 import Machines from './pages/Machines'
+import Account from './pages/Account'
 import About from './pages/About'
 import Docs from './pages/Docs'
 import FAQ from './pages/FAQ'
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="/admin/readings" element={<ProtectedRoute><AdminCrud /></ProtectedRoute>} />
             <Route path="/admin/keys" element={<ProtectedRoute><ManageKeys /></ProtectedRoute>} />
             <Route path="/admin/machines" element={<ProtectedRoute><Machines /></ProtectedRoute>} />
+            <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
           </Routes>
         </DeviceProvider>
       </ThemeProvider>
