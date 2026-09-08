@@ -104,12 +104,19 @@ export default function Dashboard() {
         </div>
       )}
 
+      {!status.online && !error && (
+        <div style={{ color: 'var(--red)', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', marginBottom: 16 }}>
+          This machine is currently OFFLINE. Readouts below show "—" rather than the last known
+          values, since those numbers may be hours old and no longer reflect reality.
+        </div>
+      )}
+
       <div className="readout-grid" style={{ gridTemplateColumns: `repeat(${Math.min(displayMetrics.length, 4)}, 1fr)` }}>
         {displayMetrics.map((m) => (
           <ReadoutPanel
             key={m.key}
             label={m.label.toUpperCase()}
-            value={readingValueFor(latest, m.key)}
+            value={status.online ? readingValueFor(latest, m.key) : null}
             unit={m.unit}
             isBattery={m.key === 'battery_pct'}
           />

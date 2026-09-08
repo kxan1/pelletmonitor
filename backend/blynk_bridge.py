@@ -34,6 +34,22 @@ def fetch_metric_definitions() -> list[dict]:
     return resp.json()
 
 
+def is_hardware_connected() -> bool:
+    """
+    Checks Blynk's actual device connectivity — separate from pin values.
+    Pin GETs return the last cached value forever, even hours after the
+    device disconnects, which is why we can't rely on fetch_blynk_values()
+    alone to know if the machine is really online right now.
+    """
+    resp = requests.get(
+        f"{settings.blynk_server}/external/api/isHardwareConnected",
+        params={"token": settings.blynk_auth_token},
+        timeout=10,
+    )
+    resp.raise_for_status()
+    return resp.text.strip().lower() == "true"
+
+
 def fetch_blynk_values(metrics: list[dict]) -> dict:
     params = {"token": settings.blynk_auth_token}
     for m in metrics:
@@ -72,8 +88,12 @@ def main():
         try:
             if cycle % METRICS_REFRESH_EVERY == 0:
                 metrics = fetch_metric_definitions()
-            core, custom = fetch_blynk_values(metrics)
-            push_to_backend(core, custom)
+
+            if is_hardware_connected():
+                core, custom = fetch_blynk_values(metrics)
+                push_to_backend(core, custom)
+            else:
+                log.info("Device reports offline in Blynk — skipping this cycle (not pushing stale data)")
         except Exception as e:
             log.error("Bridge cycle failed: %s", e)
         cycle += 1
