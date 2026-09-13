@@ -851,3 +851,11 @@ button {
   font-size: 12px;
   font-weight: 700;
 }
+
+/* ---------- Machine edit panel (full form, all fields) ---------- */
+.machine-edit-panel {
+  background: var(--panel-raised);
+  border-top: 1px solid var(--amber);
+  border-bottom: 1px solid var(--border);
+  padding: 18px;
+}

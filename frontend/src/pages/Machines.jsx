@@ -140,45 +140,76 @@ export default function Machines() {
               <Fragment key={m.device_id}>
                 <tr>
                   <td>{m.device_id}</td>
-                  {editingId === m.device_id ? (
-                    <>
-                      <td><input className="cell-input" value={editDraft.machine_name} onChange={(e) => setEditDraft({ ...editDraft, machine_name: e.target.value })} /></td>
-                      <td><input className="cell-input" value={editDraft.machine_model} onChange={(e) => setEditDraft({ ...editDraft, machine_model: e.target.value })} /></td>
-                      <td><input className="cell-input" value={editDraft.owner} onChange={(e) => setEditDraft({ ...editDraft, owner: e.target.value })} /></td>
-                    </>
-                  ) : (
-                    <>
-                      <td>{m.machine_name}</td>
-                      <td>{m.machine_model || '—'}</td>
-                      <td>{m.owner || '—'}</td>
-                    </>
-                  )}
+                  <td>{m.machine_name}</td>
+                  <td>{m.machine_model || '—'}</td>
+                  <td>{m.owner || '—'}</td>
                   <td className="table-actions">
-                    {editingId === m.device_id ? (
-                      <>
-                        <button className="export-btn" onClick={() => saveEdit(m.device_id)}>Save</button>
-                        <button className="export-btn" onClick={() => setEditingId(null)}>Cancel</button>
-                      </>
-                    ) : (
-                      <>
-                        <button className="export-btn" onClick={() => setViewingId(viewingId === m.device_id ? null : m.device_id)}>
-                          {viewingId === m.device_id ? 'Close' : 'View'}
-                        </button>
-                        <button className="export-btn" onClick={() => setSelectedDeviceId(m.device_id)}>Select</button>
-                        {isAdmin && <button className="export-btn" onClick={() => startEdit(m)}>Edit</button>}
-                        {isAdmin && <button className="export-btn danger" onClick={() => handleDelete(m.device_id)}>Delete</button>}
-                      </>
+                    <button className="export-btn" onClick={() => setViewingId(viewingId === m.device_id ? null : m.device_id)}>
+                      {viewingId === m.device_id ? 'Close' : 'View'}
+                    </button>
+                    <button className="export-btn" onClick={() => setSelectedDeviceId(m.device_id)}>Select</button>
+                    {isAdmin && (
+                      <button className="export-btn" onClick={() => editingId === m.device_id ? setEditingId(null) : startEdit(m)}>
+                        {editingId === m.device_id ? 'Close Edit' : 'Edit'}
+                      </button>
                     )}
+                    {isAdmin && <button className="export-btn danger" onClick={() => handleDelete(m.device_id)}>Delete</button>}
                   </td>
                 </tr>
                 {editingId === m.device_id && (
                   <tr>
-                    <td colSpan={5} style={{ padding: 12, background: 'var(--panel-raised)' }}>
-                      <ImageUploader
-                        value={editDraft.image_url}
-                        onChange={(url) => setEditDraft({ ...editDraft, image_url: url })}
-                        label="Photo"
-                      />
+                    <td colSpan={5} style={{ padding: 0 }}>
+                      <div className="machine-edit-panel">
+                        <h4 style={{ marginTop: 0, marginBottom: 12 }}>Editing: {m.device_id}</h4>
+                        <div className="machine-form">
+                          <div>
+                            <label className="form-label">Machine Name</label>
+                            <input className="form-input" value={editDraft.machine_name}
+                              onChange={(e) => setEditDraft({ ...editDraft, machine_name: e.target.value })} required />
+                          </div>
+                          <div>
+                            <label className="form-label">Model</label>
+                            <input className="form-input" value={editDraft.machine_model}
+                              onChange={(e) => setEditDraft({ ...editDraft, machine_model: e.target.value })} />
+                          </div>
+                          <div>
+                            <label className="form-label">Owner</label>
+                            <input className="form-input" value={editDraft.owner}
+                              onChange={(e) => setEditDraft({ ...editDraft, owner: e.target.value })} />
+                          </div>
+                          <div>
+                            <label className="form-label">Manufacturer</label>
+                            <input className="form-input" value={editDraft.manufacturer}
+                              onChange={(e) => setEditDraft({ ...editDraft, manufacturer: e.target.value })} />
+                          </div>
+                          <div>
+                            <label className="form-label">Company</label>
+                            <input className="form-input" value={editDraft.company}
+                              onChange={(e) => setEditDraft({ ...editDraft, company: e.target.value })} />
+                          </div>
+                          <div>
+                            <label className="form-label">Date Bought</label>
+                            <input className="form-input" type="date" value={editDraft.date_bought}
+                              onChange={(e) => setEditDraft({ ...editDraft, date_bought: e.target.value })} />
+                          </div>
+                          <div>
+                            <ImageUploader
+                              value={editDraft.image_url}
+                              onChange={(url) => setEditDraft({ ...editDraft, image_url: url })}
+                              label="Photo"
+                            />
+                          </div>
+                          <div style={{ gridColumn: '1 / -1' }}>
+                            <label className="form-label">Description</label>
+                            <input className="form-input" value={editDraft.description}
+                              onChange={(e) => setEditDraft({ ...editDraft, description: e.target.value })} />
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                          <button className="primary-btn" style={{ marginTop: 0 }} onClick={() => saveEdit(m.device_id)}>Save Changes</button>
+                          <button className="export-btn" onClick={() => setEditingId(null)}>Cancel</button>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 )}
