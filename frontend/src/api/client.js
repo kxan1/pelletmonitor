@@ -4,7 +4,6 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 export const api = axios.create({ baseURL })
 
-// Attach the JWT (if we have one) to every request automatically.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('feeder_token')
   if (token) {
@@ -12,6 +11,27 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
+
+// Called by AuthContext to react to session expiry (401 on an authenticated
+// request) from anywhere in the app — logs out and redirects to /login with
+// a "previous session expired at ..." message, instead of leaving the user
+// stuck seeing raw "Could not validate credentials" errors.
+let unauthorizedHandler = null
+export function setUnauthorizedHandler(fn) {
+  unauthorizedHandler = fn
+}
+
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    const isAuthedRequest = !!err.config?.headers?.Authorization
+    const isLoginAttempt = err.config?.url?.includes('/auth/login')
+    if (err.response?.status === 401 && isAuthedRequest && !isLoginAttempt && unauthorizedHandler) {
+      unauthorizedHandler()
+    }
+    return Promise.reject(err)
+  },
+)
 
 const DEVICE_ID = 'esp32-feeder-01'
 
@@ -56,6 +76,11 @@ export async function loginRequest(email, password) {
   return data
 }
 
+export async function registerRequest(payload) {
+  const { data } = await api.post('/auth/register', payload)
+  return data
+}
+
 export async function fetchMe() {
   const { data } = await api.get('/auth/me')
   return data
@@ -63,6 +88,27 @@ export async function fetchMe() {
 
 export async function changeCredentials(payload) {
   const { data } = await api.put('/auth/me', payload)
+  return data
+}
+
+// ---------- Admin: user approval ----------
+export async function fetchPendingUsers() {
+  const { data } = await api.get('/admin/users/pending')
+  return data
+}
+
+export async function fetchAllUsers() {
+  const { data } = await api.get('/admin/users')
+  return data
+}
+
+export async function approveUser(userId) {
+  const { data } = await api.put(`/admin/users/${userId}/approve`)
+  return data
+}
+
+export async function removeUser(userId) {
+  const { data } = await api.delete(`/admin/users/${userId}`)
   return data
 }
 
@@ -101,6 +147,11 @@ export async function deleteMachine(deviceId) {
 // ---------- Admin: readings CRUD ----------
 export async function fetchReadingsTable(deviceId = DEVICE_ID, limit = 50, offset = 0) {
   const { data } = await api.get('/readings/table', { params: { device_id: deviceId, limit, offset } })
+  return data
+}
+
+export async function fetchReadingContext(readingId, windowMinutes = 30) {
+  const { data } = await api.get(`/readings/${readingId}/context`, { params: { window_minutes: windowMinutes } })
   return data
 }
 

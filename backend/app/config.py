@@ -32,14 +32,28 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
 
     # Seeds one admin account on first boot if the users table is empty.
-    # LOG IN AND CHANGE THIS PASSWORD before showing this to anyone.
+    # Set to admin@example.com / admin for easy demo/grading access —
+    # CHANGE THIS before any real public deployment.
     default_admin_email: str = "admin@example.com"
-    default_admin_password: str = "changeme123"
+    default_admin_password: str = "admin"
 
     # Identifies which physical machine THIS bridge instance polls for.
     # Run one bridge deployment per machine, each with a different
     # BLYNK_AUTH_TOKEN and DEVICE_ID, all pointing at the same backend.
     device_id: str = "esp32-feeder-01"
+
+    # --- Email verification (optional) ---
+    # If email_verification_enabled is False (default), registration works
+    # exactly as before — no email step. Turn this on only after you've
+    # configured real SMTP credentials below and tested delivery yourself.
+    email_verification_enabled: bool = False
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    smtp_from_name: str = "Pellet Monitor"
+    frontend_base_url: str = "http://localhost:5173"
 
     model_config = SettingsConfigDict(extra="ignore")
 

@@ -40,6 +40,11 @@ class Machine(Base):
     machine_name = Column(String, nullable=False)
     machine_model = Column(String, nullable=True)
     owner = Column(String, nullable=True)
+    manufacturer = Column(String, nullable=True)
+    company = Column(String, nullable=True)
+    date_bought = Column(DateTime(timezone=True), nullable=True)
+    description = Column(String, nullable=True)
+    image_url = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -49,7 +54,13 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, nullable=False, index=True)
     hashed_password = Column(String, nullable=False)
-    role = Column(String, default="viewer")  # admin | viewer
+    role = Column(String, default="user")  # admin | user
+    full_name = Column(String, nullable=True)
+    organization = Column(String, nullable=True)
+    avatar_url = Column(String, nullable=True)
+    is_approved = Column(Boolean, default=False)
+    email_verified = Column(Boolean, default=True)  # True unless email verification is enabled
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class DeviceStatus(Base):

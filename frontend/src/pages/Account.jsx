@@ -1,28 +1,37 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { changeCredentials } from '../api/client'
+import { changeCredentials, fetchMe } from '../api/client'
 
 export default function Account() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [me, setMe] = useState(null)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newEmail, setNewEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [organization, setOrganization] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState('')
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    fetchMe().then((data) => {
+      setMe(data)
+      setFullName(data.full_name || '')
+      setOrganization(data.organization || '')
+      setAvatarUrl(data.avatar_url || '')
+    }).catch(() => {})
+  }, [])
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
     setSuccess(null)
 
-    if (!newEmail && !newPassword) {
-      setError('Change at least the email or the password.')
-      return
-    }
     if (newPassword && newPassword.length < 8) {
       setError('New password must be at least 8 characters.')
       return
@@ -34,7 +43,12 @@ export default function Account() {
 
     setSaving(true)
     try {
-      const payload = { current_password: currentPassword }
+      const payload = {
+        current_password: currentPassword,
+        full_name: fullName,
+        organization: organization,
+        avatar_url: avatarUrl,
+      }
       if (newEmail) payload.new_email = newEmail
       if (newPassword) payload.new_password = newPassword
 
@@ -42,8 +56,6 @@ export default function Account() {
       await changeCredentials(payload)
 
       if (emailChanged) {
-        // The JWT is tied to the old email — it's no longer valid for
-        // future requests, so force a clean re-login with the new one.
         logout()
         navigate('/login')
         return
@@ -65,46 +77,42 @@ export default function Account() {
     <div className="app-shell narrow">
       <div className="form-panel">
         <h2>Account</h2>
-        <p className="subtitle" style={{ marginBottom: 20 }}>
-          Signed in as <strong>{user?.email}</strong>. Change your email and/or password below —
-          leave a field blank to keep it unchanged.
-        </p>
+        {me && (
+          <p className="subtitle" style={{ marginBottom: 20 }}>
+            Signed in as <strong>{me.email}</strong> · Role: <strong>{me.role}</strong> ·
+            Member since {new Date(me.created_at).toLocaleDateString()}
+          </p>
+        )}
         <form onSubmit={handleSubmit}>
-          <label className="form-label">Current password (required to confirm any change)</label>
-          <input
-            className="form-input"
-            type="password"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            required
-          />
+          <label className="form-label">Full Name</label>
+          <input className="form-input" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+
+          <label className="form-label">Organization</label>
+          <input className="form-input" value={organization} onChange={(e) => setOrganization(e.target.value)} />
+
+          <label className="form-label">Profile Picture URL</label>
+          <input className="form-input" placeholder="https://example.com/photo.jpg" value={avatarUrl}
+            onChange={(e) => setAvatarUrl(e.target.value)} />
+
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '20px 0' }} />
+
+          <label className="form-label">Current password (required to save any change)</label>
+          <input className="form-input" type="password" value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)} required />
 
           <label className="form-label">New email (optional)</label>
-          <input
-            className="form-input"
-            type="email"
-            placeholder={user?.email}
-            value={newEmail}
-            onChange={(e) => setNewEmail(e.target.value)}
-          />
+          <input className="form-input" type="email" placeholder={user?.email} value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)} />
 
           <label className="form-label">New password (optional, min 8 characters)</label>
-          <input
-            className="form-input"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-          />
+          <input className="form-input" type="password" value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)} />
 
           {newPassword && (
             <>
               <label className="form-label">Confirm new password</label>
-              <input
-                className="form-input"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
+              <input className="form-input" type="password" value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)} />
             </>
           )}
 

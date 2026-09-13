@@ -76,6 +76,11 @@ class MachineIn(BaseModel):
     machine_name: str
     machine_model: Optional[str] = None
     owner: Optional[str] = None
+    manufacturer: Optional[str] = None
+    company: Optional[str] = None
+    date_bought: Optional[datetime] = None
+    description: Optional[str] = None
+    image_url: Optional[str] = None
 
 
 class MachineOut(MachineIn):
@@ -95,11 +100,19 @@ class Token(BaseModel):
     token_type: str = "bearer"
     role: str
     email: str
+    is_approved: bool = True
 
 
 class UserOut(BaseModel):
+    id: int
     email: str
     role: str
+    full_name: Optional[str] = None
+    organization: Optional[str] = None
+    avatar_url: Optional[str] = None
+    is_approved: bool
+    email_verified: bool = True
+    created_at: datetime
 
     class Config:
         from_attributes = True
@@ -109,3 +122,26 @@ class ChangeCredentialsIn(BaseModel):
     current_password: str
     new_email: Optional[EmailStr] = None
     new_password: Optional[str] = Field(None, min_length=8, description="Leave blank to keep current password")
+    full_name: Optional[str] = None
+    organization: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
+class RegisterIn(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+    full_name: str
+    organization: Optional[str] = None
+    requested_role: str = Field("user", description="'user' or 'admin' — either way, requires approval before login works")
+
+
+class PendingUserOut(BaseModel):
+    id: int
+    email: str
+    full_name: Optional[str] = None
+    organization: Optional[str] = None
+    role: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

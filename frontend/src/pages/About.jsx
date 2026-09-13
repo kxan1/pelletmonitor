@@ -12,16 +12,8 @@ export default function About() {
         <p>
           The pellet machine's sensors (voltage, current, power, and battery health) were
           previously only visible to the developer through the Arduino IDE and the Blynk app.
-          This meant investors, college staff, and the general public had no way to independently
-          verify the system was working as claimed. This dashboard makes that data publicly
-          viewable, with historical trends and exportable records.
-        </p>
-        <h3>How it works</h3>
-        <p>
-          The ESP32 continues to report to Blynk exactly as before — nothing about the original
-          firmware or Blynk setup was changed. A bridge script polls Blynk's API and forwards
-          each reading into a PostgreSQL database. A FastAPI backend serves that data to this
-          React dashboard, which anyone can view.
+          This dashboard makes that data publicly viewable, with historical trends and
+          exportable records.
         </p>
         <h3>Tech stack</h3>
         <ul>
@@ -29,6 +21,25 @@ export default function About() {
           <li>Backend: Python, FastAPI, PostgreSQL</li>
           <li>Frontend: React, Vite, Recharts</li>
         </ul>
+
+        <h3>About the Developer</h3>
+        <div className="about-dev-card">
+          <img
+            src="https://via.placeholder.com/140x140?text=Your+Photo"
+            alt="Developer placeholder"
+            className="about-dev-photo"
+          />
+          <div>
+            <p style={{ marginTop: 0 }}>
+              [Placeholder — replace this paragraph in <code>frontend/src/pages/About.jsx</code>
+              with a short introduction: your name, program/year, and what this capstone project
+              means to you. Keep it to 2-4 sentences.]
+            </p>
+            <a href="https://github.com/kxan1/pelletmonitor" target="_blank" rel="noreferrer">
+              View source on GitHub →
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   )

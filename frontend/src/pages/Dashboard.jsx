@@ -5,6 +5,7 @@ import ReadoutPanel from '../components/ReadoutPanel'
 import TimeRangeTabs from '../components/TimeRangeTabs'
 import TimeSeriesChart from '../components/TimeSeriesChart'
 import StatsSummary from '../components/StatsSummary'
+import MachineSlideshow from '../components/MachineSlideshow'
 import { fetchLatest, fetchReadings, fetchStats, fetchStatus, fetchMetrics, exportCsvUrl } from '../api/client'
 
 const LIVE_POLL_MS = 4000
@@ -89,7 +90,7 @@ export default function Dashboard() {
     <div className="app-shell">
       <div className="status-strip">
         <div>
-          <h1>{currentMachine?.machine_name || 'Chicken Feeder Monitor'}</h1>
+          <h1>{currentMachine?.machine_name || 'Pellet Monitor'}</h1>
           <p className="subtitle">
             {currentMachine?.machine_model ? `${currentMachine.machine_model} — ` : ''}
             Electrical parameters — automated pellet dispenser
@@ -103,6 +104,8 @@ export default function Dashboard() {
           {error}
         </div>
       )}
+
+      <MachineSlideshow />
 
       {!status.online && !error && (
         <div style={{ color: 'var(--red)', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', marginBottom: 16 }}>
@@ -137,7 +140,12 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
-        <TimeSeriesChart data={series} parameter={parameter} />
+        <TimeSeriesChart
+          data={series}
+          parameter={parameter}
+          range={range}
+          customUnit={displayMetrics.find((m) => m.key === parameter)?.unit}
+        />
       </div>
 
       <StatsSummary stats={stats} />

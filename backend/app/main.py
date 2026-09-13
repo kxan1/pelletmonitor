@@ -14,11 +14,13 @@ from app.config import settings
 from app.auth import (
     hash_password, verify_password, create_access_token,
     get_current_user, require_admin,
+    create_email_verification_token, decode_email_verification_token,
 )
+from app.email_utils import send_verification_email
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Chicken Feeder Monitoring API")
+app = FastAPI(title="Pellet Monitoring API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -59,8 +61,6 @@ def seed_core_metrics():
 
 
 def seed_default_admin():
-    """Creates a default admin login on first boot IF no users exist yet.
-    Change this password immediately after your first login."""
     db = SessionLocal()
     try:
         if db.query(models.User).count() == 0:
@@ -68,6 +68,8 @@ def seed_default_admin():
                 email=settings.default_admin_email,
                 hashed_password=hash_password(settings.default_admin_password),
                 role="admin",
+                full_name="Administrator",
+                is_approved=True,
             ))
             db.commit()
     finally:
@@ -89,13 +91,80 @@ def root():
 
 
 # ---------- AUTH ----------
+@app.post("/auth/register")
+def register(payload: schemas.RegisterIn, db: Session = Depends(get_db)):
+    existing = db.query(models.User).filter_by(email=payload.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="An account with that email already exists")
+
+    role = payload.requested_role if payload.requested_role in ("user", "admin") else "user"
+    user = models.User(
+        email=payload.email,
+        hashed_password=hash_password(payload.password),
+        role=role,
+        full_name=payload.full_name,
+        organization=payload.organization,
+        is_approved=False,
+        email_verified=not settings.email_verification_enabled,
+    )
+    db.add(user)
+    db.commit()
+
+    email_sent = False
+    if settings.email_verification_enabled:
+        token = create_email_verification_token(user.email)
+        email_sent = send_verification_email(user.email, user.full_name or user.email, token)
+
+    if settings.email_verification_enabled and not email_sent:
+        message = (
+            "Registration submitted, but the verification email could not be sent "
+            "(SMTP may be misconfigured). Contact an admin to verify your account manually."
+        )
+    elif settings.email_verification_enabled:
+        message = "Registration submitted. Check your email to verify your address, then wait for admin approval."
+    else:
+        message = "Registration submitted. An admin must approve your account before you can log in."
+
+    return {"message": message, "email_sent": email_sent}
+
+
+@app.get("/auth/verify-email")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    email = decode_email_verification_token(token)
+    user = db.query(models.User).filter_by(email=email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Account not found")
+    user.email_verified = True
+    db.commit()
+    return {"message": "Email verified. An admin must still approve your account before you can log in."}
+
+
 @app.post("/auth/login", response_model=schemas.Token)
 def login(credentials: schemas.LoginIn, db: Session = Depends(get_db)):
+    # Self-healing: if every user was ever deleted while the backend was
+    # already running, recreate the default admin right here so recovery
+    # doesn't require a redeploy — just log in with DEFAULT_ADMIN_EMAIL /
+    # DEFAULT_ADMIN_PASSWORD from your host's environment variables.
+    if db.query(models.User).count() == 0:
+        db.add(models.User(
+            email=settings.default_admin_email,
+            hashed_password=hash_password(settings.default_admin_password),
+            role="admin",
+            full_name="Administrator",
+            is_approved=True,
+        ))
+        db.commit()
+
     user = db.query(models.User).filter_by(email=credentials.email).first()
     if not user or not verify_password(credentials.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
+    if not user.email_verified:
+        raise HTTPException(status_code=403, detail="Please verify your email before logging in")
+    if not user.is_approved:
+        raise HTTPException(status_code=403, detail="Your account is awaiting admin approval")
+
     token = create_access_token({"sub": user.email, "role": user.role})
-    return schemas.Token(access_token=token, role=user.role, email=user.email)
+    return schemas.Token(access_token=token, role=user.role, email=user.email, is_approved=user.is_approved)
 
 
 @app.get("/auth/me", response_model=schemas.UserOut)
@@ -120,10 +189,50 @@ def change_credentials(
 
     if payload.new_password:
         current_user.hashed_password = hash_password(payload.new_password)
+    if payload.full_name is not None:
+        current_user.full_name = payload.full_name
+    if payload.organization is not None:
+        current_user.organization = payload.organization
+    if payload.avatar_url is not None:
+        current_user.avatar_url = payload.avatar_url
 
     db.commit()
     db.refresh(current_user)
     return current_user
+
+
+# ---------- ADMIN: user approval ----------
+@app.get("/admin/users/pending", response_model=list[schemas.PendingUserOut], dependencies=[Depends(require_admin)])
+def list_pending_users(db: Session = Depends(get_db)):
+    return db.query(models.User).filter_by(is_approved=False).order_by(models.User.created_at).all()
+
+
+@app.get("/admin/users", response_model=list[schemas.UserOut], dependencies=[Depends(require_admin)])
+def list_all_users(db: Session = Depends(get_db)):
+    return db.query(models.User).order_by(models.User.created_at).all()
+
+
+@app.put("/admin/users/{user_id}/approve", response_model=schemas.UserOut, dependencies=[Depends(require_admin)])
+def approve_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.get(models.User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.is_approved = True
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@app.delete("/admin/users/{user_id}", dependencies=[Depends(require_admin)])
+def reject_or_remove_user(user_id: int, current_user: models.User = Depends(require_admin), db: Session = Depends(get_db)):
+    user = db.get(models.User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot remove your own account")
+    db.delete(user)
+    db.commit()
+    return {"deleted": user_id}
 
 
 # ---------- METRIC DEFINITIONS ("keys") ----------
@@ -182,7 +291,7 @@ def delete_metric(key: str, db: Session = Depends(get_db)):
     return {"deleted": key}
 
 
-# ---------- MACHINES (device identity: name, model, owner) ----------
+# ---------- MACHINES (device identity + detail info) ----------
 @app.get("/machines", response_model=list[schemas.MachineOut])
 def get_machines(db: Session = Depends(get_db)):
     return db.query(models.Machine).all()
@@ -205,9 +314,8 @@ def update_machine(device_id: str, machine: schemas.MachineIn, db: Session = Dep
     row = db.query(models.Machine).filter_by(device_id=device_id).first()
     if not row:
         raise HTTPException(status_code=404, detail="machine not found")
-    row.machine_name = machine.machine_name
-    row.machine_model = machine.machine_model
-    row.owner = machine.owner
+    for field, value in machine.model_dump(exclude={"device_id"}).items():
+        setattr(row, field, value)
     db.commit()
     db.refresh(row)
     return row
@@ -235,8 +343,6 @@ def ingest_reading(reading: schemas.ReadingIn, db: Session = Depends(get_db)):
     else:
         db.add(models.DeviceStatus(device_id=reading.device_id))
 
-    # Auto-register the machine if it hasn't been added yet, so the CRUD/join
-    # view always has a row to show (name/model/owner can be filled in later).
     machine = db.query(models.Machine).filter_by(device_id=reading.device_id).first()
     if not machine:
         db.add(models.Machine(device_id=reading.device_id, machine_name=reading.device_id))
@@ -325,7 +431,6 @@ def get_readings_table(
     offset: int = 0,
     db: Session = Depends(get_db),
 ):
-    """Powers the admin CRUD screen: readings + machine_name/model/owner in one row."""
     machine = db.query(models.Machine).filter_by(device_id=device_id).first()
     rows = (
         db.query(models.Reading)
@@ -337,19 +442,35 @@ def get_readings_table(
     )
     return [
         schemas.ReadingTableRow(
-            id=r.id,
-            recorded_at=r.recorded_at,
-            voltage=r.voltage,
-            current=r.current,
-            power=r.power,
-            battery_pct=r.battery_pct,
-            device_id=r.device_id,
+            id=r.id, recorded_at=r.recorded_at, voltage=r.voltage, current=r.current,
+            power=r.power, battery_pct=r.battery_pct, device_id=r.device_id,
             machine_name=machine.machine_name if machine else None,
             machine_model=machine.machine_model if machine else None,
             owner=machine.owner if machine else None,
         )
         for r in rows
     ]
+
+
+@app.get("/readings/{reading_id}/context", response_model=list[schemas.ReadingOut], dependencies=[Depends(require_admin)])
+def get_reading_context(reading_id: int, window_minutes: int = 30, db: Session = Depends(get_db)):
+    """Small window of readings around one specific reading, for the
+    'pinpoint this record on the graph' view in the admin CRUD table."""
+    target = db.get(models.Reading, reading_id)
+    if not target:
+        raise HTTPException(status_code=404, detail="Reading not found")
+    half_window = timedelta(minutes=window_minutes / 2)
+    rows = (
+        db.query(models.Reading)
+        .filter(
+            models.Reading.device_id == target.device_id,
+            models.Reading.recorded_at >= target.recorded_at - half_window,
+            models.Reading.recorded_at <= target.recorded_at + half_window,
+        )
+        .order_by(models.Reading.recorded_at.asc())
+        .all()
+    )
+    return rows
 
 
 @app.get("/readings/{reading_id}", response_model=schemas.ReadingOut, dependencies=[Depends(require_admin)])

@@ -33,6 +33,25 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
+def create_email_verification_token(email: str) -> str:
+    """Separate token type (purpose='verify_email') so a verification link
+    can never be replayed as a login session token, and vice versa."""
+    expire = datetime.now(timezone.utc) + timedelta(hours=24)
+    payload = {"sub": email, "purpose": "verify_email", "exp": expire}
+    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+
+
+def decode_email_verification_token(token: str) -> str:
+    """Returns the email if valid, raises HTTPException otherwise."""
+    try:
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        if payload.get("purpose") != "verify_email":
+            raise HTTPException(status_code=400, detail="Invalid verification token")
+        return payload["sub"]
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification link")
+
+
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> models.User:
     credentials_error = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
