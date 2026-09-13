@@ -829,3 +829,25 @@ button {
   object-fit: cover;
   display: block;
 }
+
+/* ---------- Users page avatars ---------- */
+.users-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.users-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--amber);
+  color: var(--bg);
+  font-size: 12px;
+  font-weight: 700;
+}

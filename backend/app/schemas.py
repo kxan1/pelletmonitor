@@ -140,8 +140,13 @@ class PendingUserOut(BaseModel):
     email: str
     full_name: Optional[str] = None
     organization: Optional[str] = None
+    avatar_url: Optional[str] = None
     role: str
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class RoleUpdateIn(BaseModel):
+    role: str = Field(..., description="'user' or 'admin'")

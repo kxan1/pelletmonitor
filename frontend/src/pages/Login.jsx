@@ -27,7 +27,7 @@ export default function Login() {
   return (
     <div className="app-shell narrow">
       <div className="form-panel">
-        <h2>Admin Login</h2>
+        <h2>Login</h2>
         <p className="subtitle" style={{ marginBottom: 20 }}>
           Sign in to edit logged data, manage parameters, and configure the system.
         </p>
@@ -50,7 +50,7 @@ export default function Login() {
           background: 'var(--panel-raised)', border: '1px dashed var(--amber)', padding: '10px 14px',
           marginBottom: 18, fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--ink-dim)',
         }}>
-          Default admin (first boot / recovery): <strong style={{ color: 'var(--amber)' }}>admin@example.com</strong> / <strong style={{ color: 'var(--amber)' }}>admin</strong>
+          Default admin (first boot / recovery): <strong style={{ color: 'var(--amber)' }}>admin@example.com</strong> / <strong style={{ color: 'var(--amber)' }}>this is the most obvious password ever</strong>
         </div>
 
         <form onSubmit={handleSubmit}>

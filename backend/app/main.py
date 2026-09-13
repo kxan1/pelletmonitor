@@ -223,6 +223,26 @@ def approve_user(user_id: int, db: Session = Depends(get_db)):
     return user
 
 
+@app.put("/admin/users/{user_id}/role", response_model=schemas.UserOut, dependencies=[Depends(require_admin)])
+def change_user_role(
+    user_id: int,
+    payload: schemas.RoleUpdateIn,
+    current_user: models.User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    if payload.role not in ("user", "admin"):
+        raise HTTPException(status_code=400, detail="role must be 'user' or 'admin'")
+    user = db.get(models.User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.id == current_user.id and payload.role != "admin":
+        raise HTTPException(status_code=400, detail="You cannot remove your own admin role")
+    user.role = payload.role
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 @app.delete("/admin/users/{user_id}", dependencies=[Depends(require_admin)])
 def reject_or_remove_user(user_id: int, current_user: models.User = Depends(require_admin), db: Session = Depends(get_db)):
     user = db.get(models.User, user_id)

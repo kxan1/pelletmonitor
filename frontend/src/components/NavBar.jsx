@@ -80,7 +80,7 @@ export default function NavBar() {
           ) : (
             <>
               <NavLink to="/register" className={linkClass} onClick={() => setOpen(false)}>Register</NavLink>
-              <NavLink to="/login" className={linkClass} onClick={() => setOpen(false)}>Admin Login</NavLink>
+              <NavLink to="/login" className={linkClass} onClick={() => setOpen(false)}>Login</NavLink>
             </>
           )}
 

@@ -124,6 +124,11 @@ export async function approveUser(userId) {
   return data
 }
 
+export async function updateUserRole(userId, role) {
+  const { data } = await api.put(`/admin/users/${userId}/role`, { role })
+  return data
+}
+
 export async function removeUser(userId) {
   const { data } = await api.delete(`/admin/users/${userId}`)
   return data
