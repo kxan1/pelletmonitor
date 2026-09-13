@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, BigInteger, String, Float, Boolean, DateTime, func
+from sqlalchemy import Column, Integer, BigInteger, String, Float, Boolean, DateTime, LargeBinary, func
 from sqlalchemy.dialects.postgresql import JSONB
 from app.database import Base
 
@@ -61,6 +61,21 @@ class User(Base):
     is_approved = Column(Boolean, default=False)
     email_verified = Column(Boolean, default=True)  # True unless email verification is enabled
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class UploadedImage(Base):
+    """
+    Uploaded images (avatars, machine photos, backgrounds) stored directly
+    in Postgres as bytes. No external storage service (S3, Cloudinary, etc)
+    needed — fine for a project at this scale. Served back via GET /uploads/{id}.
+    """
+    __tablename__ = "uploaded_images"
+
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String, nullable=True)
+    content_type = Column(String, nullable=False)
+    data = Column(LargeBinary, nullable=False)
+    uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class DeviceStatus(Base):

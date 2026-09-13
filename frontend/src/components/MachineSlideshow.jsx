@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useDevice } from '../context/DeviceContext'
+import { resolveImageUrl } from '../api/client'
 
 const SLIDE_INTERVAL_MS = 5000
 
@@ -22,7 +23,7 @@ export default function MachineSlideshow() {
   return (
     <div className="slideshow">
       <img
-        src={current.image_url}
+        src={resolveImageUrl(current.image_url)}
         alt={current.machine_name}
         className="slideshow-image"
         onClick={() => setSelectedDeviceId(current.device_id)}

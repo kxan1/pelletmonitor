@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import MachineSelector from './MachineSelector'
-import { fetchMe } from '../api/client'
+import { fetchMe, resolveImageUrl } from '../api/client'
 
 export default function NavBar() {
   const { user, isAdmin, logout } = useAuth()
@@ -48,10 +48,10 @@ export default function NavBar() {
 
         <div className={`navbar-links ${open ? 'open' : ''}`}>
           <NavLink to="/" className={linkClass} onClick={() => setOpen(false)}>Dashboard</NavLink>
-          {isAdmin && (
-            <NavLink to="/admin/readings" className={linkClass} onClick={() => setOpen(false)}>Data (CRUD)</NavLink>
+          {user && (
+            <NavLink to="/admin/readings" className={linkClass} onClick={() => setOpen(false)}>Data</NavLink>
           )}
-          {isAdmin && (
+          {user && (
             <NavLink to="/admin/machines" className={linkClass} onClick={() => setOpen(false)}>Machines</NavLink>
           )}
           {isAdmin && (
@@ -67,9 +67,9 @@ export default function NavBar() {
 
           {user ? (
             <>
-              <NavLink to="/account" className={linkClass} onClick={() => setOpen(false)}>
+              <NavLink to="/account" className={({ isActive }) => `nav-link nav-link-account ${isActive ? 'active' : ''}`} onClick={() => setOpen(false)}>
                 {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="" className="nav-avatar" />
+                  <img src={resolveImageUrl(profile.avatar_url)} alt="" className="nav-avatar" />
                 ) : (
                   <span className="nav-avatar-placeholder">{(profile?.full_name || user.email)[0].toUpperCase()}</span>
                 )}

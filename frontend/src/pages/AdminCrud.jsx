@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceDot, ResponsiveContainer } from 'recharts'
 import { useDevice } from '../context/DeviceContext'
+import { useAuth } from '../context/AuthContext'
 import { fetchReadingsTable, updateReading, deleteReading, fetchReadingContext } from '../api/client'
 
 const PARAM_OPTIONS = [
@@ -12,6 +13,7 @@ const PARAM_OPTIONS = [
 
 export default function AdminCrud() {
   const { selectedDeviceId, machines } = useDevice()
+  const { isAdmin } = useAuth()
   const [rows, setRows] = useState([])
   const [editingId, setEditingId] = useState(null)
   const [editDraft, setEditDraft] = useState({})
@@ -84,7 +86,7 @@ export default function AdminCrud() {
 
   return (
     <div className="app-shell">
-      <h1 className="page-title">Logged Data — CRUD</h1>
+      <h1 className="page-title">Logged Data{isAdmin ? ' — CRUD' : ''}</h1>
       <p className="subtitle" style={{ marginBottom: 20 }}>
         Viewing: <strong>{currentMachine?.machine_name || selectedDeviceId}</strong>
         {' '}— switch machines using the selector in the nav bar. Manage machine identity
@@ -133,8 +135,8 @@ export default function AdminCrud() {
                     ) : (
                       <>
                         <button className="export-btn" onClick={() => toggleView(r.id)}>{viewingId === r.id ? 'Close' : 'View'}</button>
-                        <button className="export-btn" onClick={() => startEdit(r)}>Edit</button>
-                        <button className="export-btn danger" onClick={() => handleDelete(r.id)}>Delete</button>
+                        {isAdmin && <button className="export-btn" onClick={() => startEdit(r)}>Edit</button>}
+                        {isAdmin && <button className="export-btn danger" onClick={() => handleDelete(r.id)}>Delete</button>}
                       </>
                     )}
                   </td>

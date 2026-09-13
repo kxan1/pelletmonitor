@@ -50,7 +50,7 @@ export default function Login() {
           background: 'var(--panel-raised)', border: '1px dashed var(--amber)', padding: '10px 14px',
           marginBottom: 18, fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--ink-dim)',
         }}>
-          Default admin (first boot / recovery): <strong style={{ color: 'var(--amber)' }}>admin@example.com</strong> / <strong style={{ color: 'var(--amber)' }}>You know the password...</strong>
+          Default admin (first boot / recovery): <strong style={{ color: 'var(--amber)' }}>admin@example.com</strong> / <strong style={{ color: 'var(--amber)' }}>admin</strong>
         </div>
 
         <form onSubmit={handleSubmit}>

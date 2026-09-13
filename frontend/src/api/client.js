@@ -70,6 +70,23 @@ export async function fetchMachines() {
   return data
 }
 
+// ---------- Image uploads ----------
+export async function uploadImage(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const { data } = await api.post('/uploads', formData)
+  return data // { id, url }
+}
+
+// Uploaded images are stored as relative paths ("/uploads/5") since the
+// backend doesn't know its own public URL — resolve against our known API
+// base here. External URLs (someone pasting a link) pass through as-is.
+export function resolveImageUrl(url) {
+  if (!url) return url
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  return `${baseURL}${url}`
+}
+
 // ---------- Auth ----------
 export async function loginRequest(email, password) {
   const { data } = await api.post('/auth/login', { email, password })

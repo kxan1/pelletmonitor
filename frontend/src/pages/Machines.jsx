@@ -1,6 +1,8 @@
 import { useState, Fragment } from 'react'
 import { useDevice } from '../context/DeviceContext'
-import { createMachine, updateMachine, deleteMachine } from '../api/client'
+import { useAuth } from '../context/AuthContext'
+import { createMachine, updateMachine, deleteMachine, resolveImageUrl } from '../api/client'
+import ImageUploader from '../components/ImageUploader'
 
 const EMPTY_FORM = {
   device_id: '', machine_name: '', machine_model: '', owner: '',
@@ -9,6 +11,7 @@ const EMPTY_FORM = {
 
 export default function Machines() {
   const { machines, refreshMachines, setSelectedDeviceId } = useDevice()
+  const { isAdmin } = useAuth()
   const [form, setForm] = useState(EMPTY_FORM)
   const [editingId, setEditingId] = useState(null)
   const [viewingId, setViewingId] = useState(null)
@@ -75,6 +78,7 @@ export default function Machines() {
       </p>
       {error && <p style={{ color: 'var(--red)', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>{error}</p>}
 
+      {isAdmin && (
       <div className="chart-panel" style={{ marginBottom: 24 }}>
         <h3 style={{ marginTop: 0 }}>Add a machine</h3>
         <form onSubmit={handleAdd} className="machine-form">
@@ -114,9 +118,7 @@ export default function Machines() {
               onChange={(e) => setForm({ ...form, date_bought: e.target.value })} />
           </div>
           <div>
-            <label className="form-label">Image URL</label>
-            <input className="form-input" placeholder="https://..." value={form.image_url}
-              onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
+            <ImageUploader value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} label="Photo" />
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
             <label className="form-label">Description</label>
@@ -126,6 +128,7 @@ export default function Machines() {
           <button className="primary-btn" type="submit">Add Machine</button>
         </form>
       </div>
+      )}
 
       <div className="table-wrap">
         <table className="data-table">
@@ -162,18 +165,29 @@ export default function Machines() {
                           {viewingId === m.device_id ? 'Close' : 'View'}
                         </button>
                         <button className="export-btn" onClick={() => setSelectedDeviceId(m.device_id)}>Select</button>
-                        <button className="export-btn" onClick={() => startEdit(m)}>Edit</button>
-                        <button className="export-btn danger" onClick={() => handleDelete(m.device_id)}>Delete</button>
+                        {isAdmin && <button className="export-btn" onClick={() => startEdit(m)}>Edit</button>}
+                        {isAdmin && <button className="export-btn danger" onClick={() => handleDelete(m.device_id)}>Delete</button>}
                       </>
                     )}
                   </td>
                 </tr>
+                {editingId === m.device_id && (
+                  <tr>
+                    <td colSpan={5} style={{ padding: 12, background: 'var(--panel-raised)' }}>
+                      <ImageUploader
+                        value={editDraft.image_url}
+                        onChange={(url) => setEditDraft({ ...editDraft, image_url: url })}
+                        label="Photo"
+                      />
+                    </td>
+                  </tr>
+                )}
                 {viewingId === m.device_id && (
                   <tr>
                     <td colSpan={5} style={{ padding: 0 }}>
                       <div className="machine-view-panel">
                         {m.image_url ? (
-                          <img src={m.image_url} alt={m.machine_name} className="machine-view-image" />
+                          <img src={resolveImageUrl(m.image_url)} alt={m.machine_name} className="machine-view-image" />
                         ) : (
                           <div className="machine-view-image machine-view-image-placeholder">No image</div>
                         )}

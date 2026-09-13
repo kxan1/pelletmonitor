@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { resolveImageUrl } from '../api/client'
 
 const ThemeContext = createContext(null)
 
@@ -15,7 +16,8 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     if (backgroundUrl) {
-      document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url("${backgroundUrl}")`
+      const resolved = resolveImageUrl(backgroundUrl)
+      document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url("${resolved}")`
       document.body.style.backgroundSize = 'cover'
       document.body.style.backgroundAttachment = 'fixed'
       document.body.style.backgroundPosition = 'center'

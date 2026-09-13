@@ -3,9 +3,9 @@ from io import StringIO
 import csv
 from typing import Optional
 
-from fastapi import FastAPI, Depends, HTTPException, Header, Query
+from fastapi import FastAPI, Depends, HTTPException, Header, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from sqlalchemy.orm import Session
 
 from app.database import Base, engine, get_db, SessionLocal
@@ -235,6 +235,35 @@ def reject_or_remove_user(user_id: int, current_user: models.User = Depends(requ
     return {"deleted": user_id}
 
 
+# ---------- IMAGE UPLOADS (avatars, machine photos, backgrounds) ----------
+MAX_UPLOAD_BYTES = 3 * 1024 * 1024  # 3MB
+
+
+@app.post("/uploads")
+async def upload_image(file: UploadFile = File(...), current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image files are allowed")
+    contents = await file.read()
+    if len(contents) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File too large (max 3MB)")
+
+    row = models.UploadedImage(filename=file.filename, content_type=file.content_type, data=contents)
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    # Relative path — the frontend prefixes this with its known API base URL,
+    # since this backend doesn't necessarily know its own public URL.
+    return {"id": row.id, "url": f"/uploads/{row.id}"}
+
+
+@app.get("/uploads/{image_id}")
+def get_upload(image_id: int, db: Session = Depends(get_db)):
+    row = db.get(models.UploadedImage, image_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Image not found")
+    return Response(content=row.data, media_type=row.content_type)
+
+
 # ---------- METRIC DEFINITIONS ("keys") ----------
 @app.get("/metrics", response_model=list[schemas.MetricDefinitionOut])
 def get_metrics(db: Session = Depends(get_db)):
@@ -424,7 +453,7 @@ def get_status(device_id: str = "esp32-feeder-01", db: Session = Depends(get_db)
 
 
 # ---------- CRUD on logged readings, joined with machine info (admin only) ----------
-@app.get("/readings/table", response_model=list[schemas.ReadingTableRow], dependencies=[Depends(require_admin)])
+@app.get("/readings/table", response_model=list[schemas.ReadingTableRow], dependencies=[Depends(get_current_user)])
 def get_readings_table(
     device_id: str = "esp32-feeder-01",
     limit: int = Query(50, le=500),
@@ -452,7 +481,7 @@ def get_readings_table(
     ]
 
 
-@app.get("/readings/{reading_id}/context", response_model=list[schemas.ReadingOut], dependencies=[Depends(require_admin)])
+@app.get("/readings/{reading_id}/context", response_model=list[schemas.ReadingOut], dependencies=[Depends(get_current_user)])
 def get_reading_context(reading_id: int, window_minutes: int = 30, db: Session = Depends(get_db)):
     """Small window of readings around one specific reading, for the
     'pinpoint this record on the graph' view in the admin CRUD table."""

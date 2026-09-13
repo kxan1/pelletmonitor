@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { changeCredentials, fetchMe } from '../api/client'
+import ImageUploader from '../components/ImageUploader'
 
 export default function Account() {
   const { user, logout } = useAuth()
@@ -90,9 +91,7 @@ export default function Account() {
           <label className="form-label">Organization</label>
           <input className="form-input" value={organization} onChange={(e) => setOrganization(e.target.value)} />
 
-          <label className="form-label">Profile Picture URL</label>
-          <input className="form-input" placeholder="https://example.com/photo.jpg" value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)} />
+          <ImageUploader value={avatarUrl} onChange={setAvatarUrl} label="Profile Picture" />
 
           <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '20px 0' }} />
 

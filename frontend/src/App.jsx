@@ -35,9 +35,9 @@ export default function App() {
             <Route path="/faq" element={<FAQ />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/account" element={<ProtectedRoute adminOnly={false}><Account /></ProtectedRoute>} />
-            <Route path="/admin/readings" element={<ProtectedRoute><AdminCrud /></ProtectedRoute>} />
+            <Route path="/admin/readings" element={<ProtectedRoute adminOnly={false}><AdminCrud /></ProtectedRoute>} />
             <Route path="/admin/keys" element={<ProtectedRoute><ManageKeys /></ProtectedRoute>} />
-            <Route path="/admin/machines" element={<ProtectedRoute><Machines /></ProtectedRoute>} />
+            <Route path="/admin/machines" element={<ProtectedRoute adminOnly={false}><Machines /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
           </Routes>
         </DeviceProvider>
