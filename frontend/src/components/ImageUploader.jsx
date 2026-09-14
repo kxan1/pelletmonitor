@@ -3,7 +3,7 @@ import { uploadImage, resolveImageUrl } from '../api/client'
 
 const MAX_BYTES = 3 * 1024 * 1024
 
-export default function ImageUploader({ value, onChange, label = 'Image' }) {
+export default function ImageUploader({ value, onChange, label = 'Image', category = 'general' }) {
   const [dragOver, setDragOver] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
@@ -22,7 +22,7 @@ export default function ImageUploader({ value, onChange, label = 'Image' }) {
     setError(null)
     setUploading(true)
     try {
-      const result = await uploadImage(file)
+      const result = await uploadImage(file, category)
       onChange(result.url)
     } catch (err) {
       setError(err.response?.data?.detail || 'Upload failed.')

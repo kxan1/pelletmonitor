@@ -150,3 +150,15 @@ class PendingUserOut(BaseModel):
 
 class RoleUpdateIn(BaseModel):
     role: str = Field(..., description="'user' or 'admin'")
+
+
+class SiteSettingsIn(BaseModel):
+    developer_name: Optional[str] = None
+    developer_intro: Optional[str] = None
+    developer_photo_url: Optional[str] = None
+    github_url: Optional[str] = None
+
+
+class SiteSettingsOut(SiteSettingsIn):
+    class Config:
+        from_attributes = True

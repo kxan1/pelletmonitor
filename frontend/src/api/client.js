@@ -71,11 +71,12 @@ export async function fetchMachines() {
 }
 
 // ---------- Image uploads ----------
-export async function uploadImage(file) {
+export async function uploadImage(file, category = 'general') {
   const formData = new FormData()
   formData.append('file', file)
+  formData.append('category', category)
   const { data } = await api.post('/uploads', formData)
-  return data // { id, url }
+  return data // { id, url, category }
 }
 
 // Uploaded images are stored as relative paths ("/uploads/5") since the
@@ -85,6 +86,17 @@ export function resolveImageUrl(url) {
   if (!url) return url
   if (url.startsWith('http://') || url.startsWith('https://')) return url
   return `${baseURL}${url}`
+}
+
+// ---------- Site settings (About page) ----------
+export async function fetchSiteSettings() {
+  const { data } = await api.get('/site-settings')
+  return data
+}
+
+export async function updateSiteSettings(payload) {
+  const { data } = await api.put('/site-settings', payload)
+  return data
 }
 
 // ---------- Auth ----------

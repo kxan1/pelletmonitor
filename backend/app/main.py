@@ -3,7 +3,7 @@ from io import StringIO
 import csv
 from typing import Optional
 
-from fastapi import FastAPI, Depends, HTTPException, Header, Query, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, Header, Query, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
 from sqlalchemy.orm import Session
@@ -260,20 +260,27 @@ MAX_UPLOAD_BYTES = 3 * 1024 * 1024  # 3MB
 
 
 @app.post("/uploads")
-async def upload_image(file: UploadFile = File(...), current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def upload_image(
+    file: UploadFile = File(...),
+    category: str = Form("general"),
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Only image files are allowed")
     contents = await file.read()
     if len(contents) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail="File too large (max 3MB)")
 
-    row = models.UploadedImage(filename=file.filename, content_type=file.content_type, data=contents)
+    valid_categories = {"avatar", "machine", "background", "developer", "general"}
+    if category not in valid_categories:
+        category = "general"
+
+    row = models.UploadedImage(filename=file.filename, content_type=file.content_type, category=category, data=contents)
     db.add(row)
     db.commit()
     db.refresh(row)
-    # Relative path — the frontend prefixes this with its known API base URL,
-    # since this backend doesn't necessarily know its own public URL.
-    return {"id": row.id, "url": f"/uploads/{row.id}"}
+    return {"id": row.id, "url": f"/uploads/{row.id}", "category": row.category}
 
 
 @app.get("/uploads/{image_id}")
@@ -282,6 +289,31 @@ def get_upload(image_id: int, db: Session = Depends(get_db)):
     if not row:
         raise HTTPException(status_code=404, detail="Image not found")
     return Response(content=row.data, media_type=row.content_type)
+
+
+# ---------- SITE SETTINGS (About page content) ----------
+@app.get("/site-settings", response_model=schemas.SiteSettingsOut)
+def get_site_settings(db: Session = Depends(get_db)):
+    row = db.get(models.SiteSettings, 1)
+    if not row:
+        row = models.SiteSettings(id=1)
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+    return row
+
+
+@app.put("/site-settings", response_model=schemas.SiteSettingsOut, dependencies=[Depends(require_admin)])
+def update_site_settings(payload: schemas.SiteSettingsIn, db: Session = Depends(get_db)):
+    row = db.get(models.SiteSettings, 1)
+    if not row:
+        row = models.SiteSettings(id=1)
+        db.add(row)
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(row, field, value)
+    db.commit()
+    db.refresh(row)
+    return row
 
 
 # ---------- METRIC DEFINITIONS ("keys") ----------

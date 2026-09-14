@@ -118,7 +118,7 @@ export default function Machines() {
               onChange={(e) => setForm({ ...form, date_bought: e.target.value })} />
           </div>
           <div>
-            <ImageUploader value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} label="Photo" />
+            <ImageUploader value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} label="Photo" category="machine" />
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
             <label className="form-label">Description</label>
@@ -197,6 +197,7 @@ export default function Machines() {
                               value={editDraft.image_url}
                               onChange={(url) => setEditDraft({ ...editDraft, image_url: url })}
                               label="Photo"
+                              category="machine"
                             />
                           </div>
                           <div style={{ gridColumn: '1 / -1' }}>

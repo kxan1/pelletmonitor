@@ -65,17 +65,31 @@ class User(Base):
 
 class UploadedImage(Base):
     """
-    Uploaded images (avatars, machine photos, backgrounds) stored directly
-    in Postgres as bytes. No external storage service (S3, Cloudinary, etc)
-    needed — fine for a project at this scale. Served back via GET /uploads/{id}.
+    Uploaded images (avatars, machine photos, backgrounds, dev photo) stored
+    directly in Postgres as bytes. No external storage service needed.
+    `category` is the logical "folder" — since Vercel (static frontend) has
+    no writable disk and Railway's disk resets on redeploy, a DB column is
+    the durable equivalent of separate upload folders.
     """
     __tablename__ = "uploaded_images"
 
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, nullable=True)
     content_type = Column(String, nullable=False)
+    category = Column(String, default="general")  # 'avatar' | 'machine' | 'background' | 'developer' | 'general'
     data = Column(LargeBinary, nullable=False)
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class SiteSettings(Base):
+    """Singleton row (id=1) holding admin-editable About-page content."""
+    __tablename__ = "site_settings"
+
+    id = Column(Integer, primary_key=True, default=1)
+    developer_name = Column(String, nullable=True)
+    developer_intro = Column(String, nullable=True)
+    developer_photo_url = Column(String, nullable=True)
+    github_url = Column(String, nullable=True)
 
 
 class DeviceStatus(Base):

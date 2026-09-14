@@ -91,7 +91,7 @@ export default function Account() {
           <label className="form-label">Organization</label>
           <input className="form-input" value={organization} onChange={(e) => setOrganization(e.target.value)} />
 
-          <ImageUploader value={avatarUrl} onChange={setAvatarUrl} label="Profile Picture" />
+          <ImageUploader value={avatarUrl} onChange={setAvatarUrl} label="Profile Picture" category="avatar" />
 
           <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '20px 0' }} />
 

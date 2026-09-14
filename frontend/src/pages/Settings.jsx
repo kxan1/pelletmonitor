@@ -20,7 +20,7 @@ export default function Settings() {
         <p className="subtitle" style={{ marginBottom: 12 }}>
           Upload or drag in an image to use as the page background. Leave empty to use the default.
         </p>
-        <ImageUploader value={backgroundUrl} onChange={setBackgroundUrl} label="Background Image" />
+        <ImageUploader value={backgroundUrl} onChange={setBackgroundUrl} label="Background Image" category="background" />
       </div>
     </div>
   )
