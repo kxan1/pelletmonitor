@@ -47,8 +47,9 @@ export default function About() {
         <h3>Tech stack</h3>
         <ul>
           <li>Hardware: ESP32 + voltage/current sensors, Blynk IoT platform</li>
-          <li>Backend: Python, FastAPI, PostgreSQL</li>
+          <li>Backend: Python, FastAPI, Neon (PostgreSQL)</li>
           <li>Frontend: React, Vite, Recharts</li>
+          <li>Cloud provider: Railway | Hosting: Vercel</li>
         </ul>
 
         <h3>About the Developer</h3>
